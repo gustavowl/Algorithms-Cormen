@@ -1,10 +1,10 @@
 #The user will type a list separated by the character "space". The list will be stored in lst
 lst = [int(num) for num in input("Type the list. Elements are separated by space\n").split()]
 #prints the original list
-print("The original list is: {}".format(lst))
+#print("The original list is: {}".format(lst))
 
 #starts insert sort
-print("\nINSERT SORT BEGIN\n")
+#print("\nINSERT SORT BEGIN\n")
 
 for i in range(1, len(lst)):
     val = lst[i]
@@ -15,8 +15,10 @@ for i in range(1, len(lst)):
     lst[index + 1] = val
     print("iteraction #{}: {}".format(i, lst))
 
-print("\nINSERT SORT END\n")
+#print("\nINSERT SORT END\n")
 #end of insert sort
 
 #prints sorted list
 print("The sorted list is: {}".format(lst))
+f = open('output.txt', 'w')
+f.write(' '.join(map(str, lst)))
