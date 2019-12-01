@@ -1,1 +1,1 @@
-gcc fft.c -o fast-fourier-transform
+gcc fft.c -o fast-fourier-transform -lm
