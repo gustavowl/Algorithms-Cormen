@@ -123,10 +123,14 @@ polynomial* multiply_pols(polynomial pol_a, polynomial pol_b) {
 	for (size_t i = 0; i < pol_c->size; i++)
 		pol_c->pol[i] = a_ext->pol[i] * b_ext->pol[i];
 
-	//TODO: implement ifft
-
 	free_pol(a_ext);
 	free_pol(b_ext);
+
+	//applies ifft to compute original polynomial
+	double complex* yc = (double complex*) malloc(pol_c->size * sizeof(double complex));
+	ifft(pol_c->pol, yc, pol_c->size);
+	free(pol_c->pol);
+	pol_c->pol = yc;
 
 	return pol_c;
 }
