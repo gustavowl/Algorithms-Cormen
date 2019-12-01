@@ -63,12 +63,12 @@ void ifft(double complex* a, double complex* y, size_t n) {
 		a1[i] = a[i*2 + 1]; //a_1, a_3, a_5, ... , a_{n - 1}
 	}
 	
-	fft(a0, y0, n/2);
-	fft(a1, y1, n/2);
+	ifft(a0, y0, n/2);
+	ifft(a1, y1, n/2);
 
 	for (size_t k = 0; k < n/2; k++) {
-		y[k] = y0[k] + omega * y1[k] / n;
-		y[k + n/2] = y0[k] - omega * y1[k] / n;
+		y[k] = y0[k] + omega * y1[k];
+		y[k + n/2] = y0[k] - omega * y1[k];
 		omega = omega * omega_n;
 	}
 }
@@ -95,6 +95,20 @@ polynomial* extend_pol(polynomial p, size_t new_size) {
 	return p_ext;
 }
 
+void print_complex(double complex z) {
+    printf("%.1f%+.1fi", creal(z), cimag(z));
+}
+
+void print_polynomial(polynomial p) {
+	for (size_t i = p.size; i > 1; i--) {
+		printf("(");
+		print_complex(p.pol[i - 1]);
+		printf(")x^%lu + ", i - 1);
+	}
+	print_complex(p.pol[0]);
+}
+
+
 polynomial* multiply_pols(polynomial pol_a, polynomial pol_b) {
 
 	//extends input polynomials
@@ -115,36 +129,30 @@ polynomial* multiply_pols(polynomial pol_a, polynomial pol_b) {
 	free(b_ext->pol);
 	a_ext->pol = ya;
 	b_ext->pol = yb;
+	printf("\na_ext\n");
+	print_polynomial(*a_ext);
+	printf("\nb_ext\n");
+	print_polynomial(*b_ext);
+	printf("\n");
 
 	//multiples a_ext and b_ext
 	polynomial* pol_c;
 	pol_c = extend_pol(pol_a, pol_c_size);
 	
+	double complex* yc = (double complex*) malloc(pol_c->size * sizeof(double complex));
 	for (size_t i = 0; i < pol_c->size; i++)
-		pol_c->pol[i] = a_ext->pol[i] * b_ext->pol[i];
+		yc[i] = ya[i] * yb[i];
 
 	free_pol(a_ext);
 	free_pol(b_ext);
 
 	//applies ifft to compute original polynomial
-	double complex* yc = (double complex*) malloc(pol_c->size * sizeof(double complex));
-	ifft(pol_c->pol, yc, pol_c->size);
-	free(pol_c->pol);
-	pol_c->pol = yc;
+	ifft(yc, pol_c->pol, pol_c->size);
+	for (size_t i = 0; i < pol_c->size; i++)
+		pol_c->pol[i] /= pol_c->size;
+	free(yc);
 
 	return pol_c;
-}
-
-void print_complex(double complex z) {
-    printf("%.1f%+.1fi", creal(z), cimag(z));
-}
-
-void print_polynomial(polynomial p) {
-	for (size_t i = p.size; i > 0; i--) {
-		printf("(");
-		print_complex(p.pol[i - 1]);
-		printf(")x^%lu ", i - 1);
-	}
 }
 
 int main(void)
