@@ -42,15 +42,46 @@ void fft(double complex* a, double complex* y, size_t n) {
 	}
 }
 
+void ifft(double complex* a, double complex* y, size_t n) {
+	//a: input vector
+	//y: output vector
+	//n: size of a, and y vectors. n must be a power of 2
+	
+	if (n == 1) {
+		y[0] = a[0];
+		return;
+	}
+
+	double complex omega_n = cexp(-2*pi*I/n);
+	double complex omega = 1;
+
+	double complex a0[n/2], a1[n/2];
+	double complex y0[n/2], y1[n/2];
+
+	for (size_t i = 0; i < n/2; i++) {
+		a0[i] = a[i*2]; //a_0, a_2, a_4, ... , a_{n - 2}
+		a1[i] = a[i*2 + 1]; //a_1, a_3, a_5, ... , a_{n - 1}
+	}
+	
+	fft(a0, y0, n/2);
+	fft(a1, y1, n/2);
+
+	for (size_t k = 0; k < n/2; k++) {
+		y[k] = y0[k] + omega * y1[k] / n;
+		y[k + n/2] = y0[k] - omega * y1[k] / n;
+		omega = omega * omega_n;
+	}
+}
+
 void free_pol(polynomial* p) {
 	free(p->pol);
 	free(p);
 }
 
-polynomial* extend_pol(polynomial p) {
+polynomial* extend_pol(polynomial p, size_t new_size) {
 	//creates polynomial
 	polynomial* p_ext = (polynomial*) malloc(sizeof(polynomial));
-	p_ext->size = p.size * 2;
+	p_ext->size = new_size;
 	double complex* pol;
 	pol = (double complex*) malloc(p_ext->size * sizeof(double complex));
 	p_ext->pol = pol;
@@ -67,8 +98,11 @@ polynomial* extend_pol(polynomial p) {
 polynomial* multiply_pols(polynomial pol_a, polynomial pol_b) {
 
 	//extends input polynomials
-	polynomial* a_ext = extend_pol(pol_a);
-	polynomial* b_ext = extend_pol(pol_b);
+	size_t pol_c_size = pol_a.size > pol_b.size ? pol_a.size : pol_b.size;
+	pol_c_size *= 2;
+
+	polynomial* a_ext = extend_pol(pol_a, pol_c_size);
+	polynomial* b_ext = extend_pol(pol_b, pol_c_size);
 
 	//applies fft to extended polynomials
 	double complex* ya = (double complex*) malloc(a_ext->size * sizeof(double complex));
@@ -84,12 +118,9 @@ polynomial* multiply_pols(polynomial pol_a, polynomial pol_b) {
 
 	//multiples a_ext and b_ext
 	polynomial* pol_c;
-	if (pol_a.size >= pol_b.size)
-		pol_c = extend_pol(pol_a);
-	else
-		pol_c = extend_pol(pol_b);
+	pol_c = extend_pol(pol_a, pol_c_size);
 	
-	for (size_t i = 0; i < pol_c.size; i++)
+	for (size_t i = 0; i < pol_c->size; i++)
 		pol_c->pol[i] = a_ext->pol[i] * b_ext->pol[i];
 
 	//TODO: implement ifft
