@@ -21,7 +21,7 @@ void fft(double complex* a, double complex* y, size_t n) {
 		return;
 	}
 
-	double complex omega_n = cexp(pi * I); //\omega_n = e^{2 \pi i / n}
+	double complex omega_n = cexp(2*pi*I/n);
 	double complex omega = 1;
 
 	double complex a0[n/2], a1[n/2];
@@ -42,22 +42,60 @@ void fft(double complex* a, double complex* y, size_t n) {
 	}
 }
 
+void free_pol(polynomial* p) {
+	free(p->pol);
+	free(p);
+}
+
+polynomial* extend_pol(polynomial p) {
+	//creates polynomial
+	polynomial* p_ext = (polynomial*) malloc(sizeof(polynomial));
+	p_ext->size = p.size * 2;
+	double complex* pol;
+	pol = (double complex*) malloc(p_ext->size * sizeof(double complex));
+	p_ext->pol = pol;
+
+	//initializes
+	for (size_t i = 0; i < p.size; i++) //copies original values
+		pol[i] = p.pol[i];
+	for (size_t i = p.size; i < p_ext->size; i++) //0 remaining values
+		pol[i] = 0;
+
+	return p_ext;
+}
+
 polynomial* multiply_pols(polynomial pol_a, polynomial pol_b) {
-	//pol_a and pol_b: polynomials to be multiplied
-	//
-	//output: polynomyal C
+
+	//extends input polynomials
+	polynomial* a_ext = extend_pol(pol_a);
+	polynomial* b_ext = extend_pol(pol_b);
+
+	//applies fft to extended polynomials
+	double complex* ya = (double complex*) malloc(a_ext->size * sizeof(double complex));
+	double complex* yb = (double complex*) malloc(b_ext->size * sizeof(double complex));
+	fft(a_ext->pol, ya, a_ext->size);
+	fft(b_ext->pol, yb, b_ext->size);
+
+	//assigns point-value representation to extended polynomials
+	free(a_ext->pol);
+	free(b_ext->pol);
+	a_ext->pol = ya;
+	b_ext->pol = yb;
+
+	//multiples a_ext and b_ext
+	polynomial* pol_c;
+	if (pol_a.size >= pol_b.size)
+		pol_c = extend_pol(pol_a);
+	else
+		pol_c = extend_pol(pol_b);
 	
-	//fft(A, B, 2);
-	//print_complex(B[0]);
-	//printf("\n");
-	//print_complex(B[1]);
-	//printf("\n");
-	
-	polynomial* pol_c = (polynomial*) malloc(sizeof(polynomial));
-	pol_c->size = (pol_a.size > pol_b.size ? pol_a.size : pol_b.size) * 2;
-	double complex* c;
-	c = (double complex*) malloc(pol_c->size * sizeof(double complex));
-	pol_c->pol = c;
+	for (size_t i = 0; i < pol_c.size; i++)
+		pol_c->pol[i] = a_ext->pol[i] * b_ext->pol[i];
+
+	//TODO: implement ifft
+
+	free_pol(a_ext);
+	free_pol(b_ext);
 
 	return pol_c;
 }
@@ -86,12 +124,11 @@ int main(void)
 	pol_b.pol = B;
 
 	polynomial* pol_c = multiply_pols(pol_a, pol_b);
-	
 
-	print_polynomial(pol_a);
+	print_polynomial(*pol_c);
 	printf("\n");
-	//TODO: free pol_c
-	free(pol_c->pol);
-	free(pol_c);
+
+	free_pol(pol_c);
+
 	return 0;
 }
