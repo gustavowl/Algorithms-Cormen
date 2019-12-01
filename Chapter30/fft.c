@@ -1,6 +1,7 @@
 #include <complex.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 const double pi = acos(-1);
 
@@ -41,13 +42,56 @@ void fft(double complex* a, double complex* y, size_t n) {
 	}
 }
 
+polynomial* multiply_pols(polynomial pol_a, polynomial pol_b) {
+	//pol_a and pol_b: polynomials to be multiplied
+	//
+	//output: polynomyal C
+	
+	//fft(A, B, 2);
+	//print_complex(B[0]);
+	//printf("\n");
+	//print_complex(B[1]);
+	//printf("\n");
+	
+	polynomial* pol_c = (polynomial*) malloc(sizeof(polynomial));
+	pol_c->size = (pol_a.size > pol_b.size ? pol_a.size : pol_b.size) * 2;
+	double complex* c;
+	c = (double complex*) malloc(pol_c->size * sizeof(double complex));
+	pol_c->pol = c;
+
+	return pol_c;
+}
+
 void print_complex(double complex z) {
     printf("%.1f%+.1fi", creal(z), cimag(z));
 }
 
+void print_polynomial(polynomial p) {
+	for (size_t i = p.size; i > 0; i--) {
+		printf("(");
+		print_complex(p.pol[i - 1]);
+		printf(")x^%lu ", i - 1);
+	}
+}
+
 int main(void)
 {
-	//double complex A[] = {1, 2, 3, 4};
-	//double complex B[SIZE] = {1, 2, 3, 4};
-	//multiply_pols(A, B, *size);
+	double complex A[] = {1, 2, 3, 4};
+	double complex B[] = {1, 2, 3, 4};
+
+	polynomial pol_a, pol_b;
+	pol_a.size = 4;
+	pol_a.pol = A;
+	pol_b.size = 4;
+	pol_b.pol = B;
+
+	polynomial* pol_c = multiply_pols(pol_a, pol_b);
+	
+
+	print_polynomial(pol_a);
+	printf("\n");
+	//TODO: free pol_c
+	free(pol_c->pol);
+	free(pol_c);
+	return 0;
 }
